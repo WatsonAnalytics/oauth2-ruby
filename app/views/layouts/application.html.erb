@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Your Application</title>
+</head>
+<body>
+  <div style="background-color:blue;color:white;">
+    <h2 style="padding: 10px">Your Application</h2>
+  </div>
+  <div>
+    <%= flash[:error] %>
+    <div style="width:400px;float:left;padding:10px">
+      <img src="https://www.ibm.com/web/wcm/connect/analytics/3ec9cc00-2118-4571-a609-90160be21eef/WA.png?MOD=AJPERES&amp;CACHEID=ROOTWORKSPACE.Z18_6O90H402K06NE0AI8P8I5O20023ec9cc00-2118-4571-a609-90160be21eef" alt="Watson Analytics" style="width:300px;height:150px;"/>
+      <br/>
+      <%= yield %>
+    </div>
+</body>
+</html>
