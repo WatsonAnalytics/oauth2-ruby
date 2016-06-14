@@ -24,8 +24,35 @@
 #
 ###############################################################################
 
-class ApplicationController < ActionController::Base
-  # Prevent CSRF attacks by raising an exception.
-  # For APIs, you may want to use :null_session instead.
-  protect_from_forgery with: :exception
+class ContentController < ApplicationController
+  include WatsonAnalyticsOauth2
+  
+  before_action :init_client
+
+  def index
+    connection = get_connection
+    response = connection.get("/watsonanalytics/run/content/v1/folders",{} , @headers)
+    @folder = JSON.parse(response.body)
+  end
+
+  def show
+    connection = get_connection
+    response = connection.get("/watsonanalytics/run/content/v1/folders/#{params[:id]}",{} , @headers)
+    if response.success?
+      body = JSON.parse(response.body)
+      @folder = body['children']
+    else
+      @folder = JSON.parse('[]')
+      @error = response.body  
+    end
+  end
+  
+  def dataset
+    connection = get_connection
+    response = connection.get("/watsonanalytics/run/data/v1/datasets/#{params[:id]}",{} , @headers)
+    @dataset = JSON.parse(response.body)
+    @parent = @dataset['folder']['id']
+    response = connection.get("/watsonanalytics/run/data/v1/datasets/#{params[:id]}/job",{} , @headers)
+    @status = JSON.parse(response.body)
+  end
 end

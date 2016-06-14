@@ -25,32 +25,31 @@
 ###############################################################################
 
 class WaLoginController < ApplicationController
+  include WatsonAnalyticsOauth2
   
-  before_action :init_client
+  before_action :init_client, except: [:index]
     
   def index
+    reset_session
+    init_client
     # Generate URL to obtain OAuth2 authentication code
     @redirect_uri = 'http://' + request.host_with_port() + '/waLogin/redirect' 
     @auth_url = @client.authorization_code.authorization_path(:redirect_uri => @redirect_uri, :scope => 'userContext')
   end
 
   def redirect
-    # Clear the session first
-    reset_session
-    
     # Request access token from /oauth2/v1/token
     token_response = @client.authorization_code.get_token(params[:code], {:headers => @headers})
     body = JSON.parse(token_response.body)
     access_token = body["access_token"]
-
+    refresh_token = body["refresh_token"]
+      
     # Save the access token in the session
     session[:wa_token] = access_token
+    session[:wa_refresh] = refresh_token
     @headers[:'Authorization'] = 'Bearer ' + session[:wa_token]
       
-    connection = Faraday.new("https://api.ibm.com") do |faraday|
-      faraday.response :detailed_logger, config.logger
-      faraday.adapter Faraday.default_adapter
-    end
+    connection = get_connection
     
     # Call the /accounts/v1/me endpoint - retrieve user information
     response = connection.get('/watsonanalytics/run/accounts/v1/me',{} , @headers)
@@ -61,15 +60,7 @@ class WaLoginController < ApplicationController
   end
   
   def upload
-    if session[:wa_token]
-      # Add the access token for authenticated API calls.
-      @headers[:'Authorization'] = 'Bearer ' + session[:wa_token]
-    end
-
-    connection = Faraday.new("https://api.ibm.com") do |faraday|
-      faraday.response :detailed_logger, config.logger
-      faraday.adapter Faraday.default_adapter
-    end
+    connection = get_connection
     
     # Create the data set
     response = connection.post do |request|
@@ -109,19 +100,5 @@ class WaLoginController < ApplicationController
     else
       flash[:error] = "Failed to upload data: #{body['message']}"
     end    
-  end
-  
-  def init_client
-    @clientid = ENV['wa_client_id']
-    @secret = ENV['wa_client_secret']
-    @headers = {'X-IBM-Client-Id' => @clientid, 'X-IBM-Client-Secret' => @secret}
-    @client = OAuth2Client::Client.new('https://api.ibm.com', 
-       @clientid, 
-       @secret, 
-       {
-           :authorize_path => 'https://api.ibm.com/watsonanalytics/run/clientauth/v1/auth',
-           :token_path => 'https://api.ibm.com/watsonanalytics/run/oauth2/v1/token'
-         }
-       )
   end
 end

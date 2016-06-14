@@ -23,12 +23,4 @@
 - SOFTWARE.
 -
 -->
-<%= simple_format("User: " + @displayName) %>
-<%= simple_format("Current used disk space: #{@usage}") %>
-<%= simple_format("Total available disk space: #{@quota}") %>
-<br/>
-<%= link_to("Explore Content", {:controller => 'content', :action => 'index'}) %>
-<%= link_to("Upload Data", {:action => 'upload'}) %>
-<br/>
-
-<%= simple_format("When your application uploads the data, the application moves you to Watson Analytics. The uploaded data set is in the personal folder.") %>
+<%= render(:partial => "list", :locals => {:folder => @folder}) %>
